@@ -63,12 +63,16 @@ PLAID_ENV=sandbox
 FINNHUB_API_KEY=your_finnhub_api_key
 ```
 
-5. Run the development server:
+5. Set up the database in Supabase:
+   - Go to Supabase Dashboard → SQL Editor
+   - Copy and run the SQL from `supabase/schema.sql`
+
+6. Run the development server:
 ```bash
 npm run dev
 ```
 
-6. Open [http://localhost:3000](http://localhost:3000) in your browser.
+7. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🔐 API Integrations
 

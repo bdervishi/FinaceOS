@@ -51,7 +51,7 @@ export default function DashboardPage() {
     )
   }
 
-  const totalBalance = mockAccounts.reduce((acc, acc_) => acc_ + acc_, 0)
+  const totalBalance = mockAccounts.reduce((acc, item) => acc + item.balance, 0)
   const totalAssets = mockAccounts.filter(a => a.balance > 0).reduce((acc, a) => acc + a.balance, 0)
   const totalLiabilities = mockAccounts.filter(a => a.balance < 0).reduce((acc, a) => acc + Math.abs(a.balance), 0)
 

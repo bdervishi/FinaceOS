@@ -1,4 +1,4 @@
-import { handleAuth, handleLogin, handleLogout, handleCallback } from '@auth0/nextjs-auth0';
+import { handleAuth, handleLogin, handleLogout, handleCallback } from '@auth0/nextjs-auth0/server';
 
 export const GET = handleAuth({
   login: handleLogin({
@@ -9,7 +9,6 @@ export const GET = handleAuth({
   }),
   callback: handleCallback({
     afterCallback: async (req, session) => {
-      // Optionally sync user to Supabase here
       return session;
     },
   }),

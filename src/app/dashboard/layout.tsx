@@ -1,4 +1,4 @@
-import { getSession } from '@auth0/nextjs-auth0'
+import { getSession } from '@auth0/nextjs-auth0/server'
 import Sidebar from '@/components/Sidebar'
 
 export default async function DashboardLayout({

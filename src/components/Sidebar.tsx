@@ -1,9 +1,12 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, PieChart, CreditCard, TrendingUp, Settings, LogOut, Wallet, User } from 'lucide-react'
 import { clsx } from 'clsx'
+import { createClient } from '@/lib/supabase'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -15,17 +18,49 @@ const navigation = [
 ]
 
 interface User {
-  name?: string | null
-  email?: string | null
-  picture?: string | null
+  user_metadata?: {
+    full_name?: string
+    avatar_url?: string
+  }
+  email?: string
 }
 
 interface SidebarProps {
   user?: User
 }
 
-export default function Sidebar({ user }: SidebarProps) {
+export default function Sidebar({ user: initialUser }: SidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const supabase = createClient()
+  const [user, setUser] = useState<User | null>(initialUser || null)
+  const [loading, setLoading] = useState(!initialUser)
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user as User | null)
+      setLoading(false)
+    }
+    getUser()
+  }, [])
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
+
+  const getUserDisplayName = () => {
+    if (user?.user_metadata?.full_name) return user.user_metadata.full_name
+    if (user?.email) return user.email.split('@')[0]
+    return 'Demo User'
+  }
+
+  const getUserEmail = () => {
+    if (user?.email) return user.email
+    return 'demo@financeos.app'
+  }
 
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-white w-64">
@@ -65,18 +100,18 @@ export default function Sidebar({ user }: SidebarProps) {
       <div className="p-4 border-t border-slate-800">
         <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-800/50">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20">
-            {user?.picture ? (
-              <img src={user.picture} alt={user.name || 'User'} className="h-10 w-10 rounded-full" />
+            {user?.user_metadata?.avatar_url ? (
+              <img src={user.user_metadata.avatar_url} alt="User" className="h-10 w-10 rounded-full" />
             ) : (
               <User className="h-5 w-5 text-emerald-400" />
             )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">
-              {user?.name || 'Demo User'}
+              {loading ? 'Loading...' : getUserDisplayName()}
             </p>
             <p className="text-xs text-slate-400 truncate">
-              {user?.email || 'demo@financeos.app'}
+              {loading ? '...' : getUserEmail()}
             </p>
           </div>
         </div>
@@ -84,13 +119,13 @@ export default function Sidebar({ user }: SidebarProps) {
 
       {/* Logout */}
       <div className="p-3 border-t border-slate-800">
-        <Link
-          href="/api/auth/logout"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
         >
           <LogOut className="h-5 w-5" />
           Sign Out
-        </Link>
+        </button>
       </div>
     </div>
   )

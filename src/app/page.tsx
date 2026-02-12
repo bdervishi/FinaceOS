@@ -53,13 +53,13 @@ export default function Home() {
             </nav>
             <div className="flex items-center gap-4">
               <Link
-                href="/dashboard"
+                href="/login"
                 className="text-white hover:text-emerald-400 transition-colors font-medium"
               >
                 Sign In
               </Link>
               <Link
-                href="/dashboard"
+                href="/login"
                 className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 Get Started
@@ -83,7 +83,7 @@ export default function Home() {
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                href="/dashboard"
+                href="/login"
                 className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors flex items-center justify-center gap-2"
               >
                 Start Free Trial
@@ -195,9 +195,9 @@ export default function Home() {
           <p className="mt-4 text-lg text-slate-400">
             Join thousands of users who have already taken control of their finances with FinanceOS.
           </p>
-          <div className="mt-10">
+           <div className="mt-10">
             <Link
-              href="/dashboard"
+              href="/login"
               className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors"
             >
               Get Started Free

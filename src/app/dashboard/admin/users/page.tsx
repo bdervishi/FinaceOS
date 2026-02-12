@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Shield, Search, Ban, Unlock, MoreVertical, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
+import { Shield, Search, Ban, Unlock, Plus, X, Mail, User as UserIcon, Crown, AlertTriangle } from 'lucide-react'
 
 interface User {
   id: string
@@ -24,13 +24,18 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [banReason, setBanReason] = useState('')
   const [showBanModal, setShowBanModal] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [newName, setNewName] = useState('')
+  const [newRole, setNewRole] = useState<'user' | 'admin'>('user')
+  const [addingUser, setAddingUser] = useState(false)
 
   useEffect(() => {
     fetchUsers()
   }, [])
 
   const fetchUsers = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false })
@@ -42,7 +47,7 @@ export default function AdminUsersPage() {
   const handleBanUser = async () => {
     if (!selectedUser || !banReason) return
 
-    const { error } = await supabase
+    await supabase
       .from('profiles')
       .update({
         is_banned: true,
@@ -51,17 +56,15 @@ export default function AdminUsersPage() {
       })
       .eq('id', selectedUser.id)
 
-    if (!error) {
-      await logAdminAction('user_banned', selectedUser.id, { reason: banReason })
-      setShowBanModal(false)
-      setBanReason('')
-      setSelectedUser(null)
-      fetchUsers()
-    }
+    await logAdminAction('user_banned', selectedUser.id, { reason: banReason })
+    setShowBanModal(false)
+    setBanReason('')
+    setSelectedUser(null)
+    fetchUsers()
   }
 
-  const handleUnlockUser = async (user: User) => {
-    const { error } = await supabase
+  const handleUnbanUser = async (user: User) => {
+    await supabase
       .from('profiles')
       .update({
         is_banned: false,
@@ -70,10 +73,42 @@ export default function AdminUsersPage() {
       })
       .eq('id', user.id)
 
-    if (!error) {
-      await logAdminAction('user_unbanned', user.id)
+    await logAdminAction('user_unbanned', user.id)
+    fetchUsers()
+  }
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setAddingUser(true)
+
+    try {
+      // Create user via Supabase Auth invite
+      const { error } = await supabase.auth.admin.inviteUserByEmail(newEmail, {
+        data: { full_name: newName }
+      })
+
+      if (error) throw error
+
+      setShowAddModal(false)
+      setNewEmail('')
+      setNewName('')
+      setNewRole('user')
       fetchUsers()
+    } catch (error: any) {
+      alert('Error adding user: ' + error.message)
+    } finally {
+      setAddingUser(false)
     }
+  }
+
+  const handleUpdateRole = async (user: User, newRole: 'user' | 'admin') => {
+    await supabase
+      .from('profiles')
+      .update({ role: newRole })
+      .eq('id', user.id)
+
+    await logAdminAction('role_updated', user.id, { newRole })
+    fetchUsers()
   }
 
   const logAdminAction = async (actionType: string, targetUserId: string, metadata: any = {}) => {
@@ -119,6 +154,13 @@ export default function AdminUsersPage() {
           <h1 className="text-3xl font-bold text-slate-900">User Management</h1>
           <p className="text-slate-500 mt-1">Manage users and permissions</p>
         </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium"
+        >
+          <Plus className="h-5 w-5" />
+          Add User
+        </button>
       </div>
 
       {/* Search */}
@@ -169,17 +211,25 @@ export default function AdminUsersPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    {getRoleBadge(user.role)}
+                    <select
+                      value={user.role}
+                      onChange={(e) => handleUpdateRole(user, e.target.value as 'user' | 'admin')}
+                      disabled={user.role === 'super_admin'}
+                      className="px-2 py-1 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100"
+                    >
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
+                      <option value="super_admin" disabled>Super Admin</option>
+                    </select>
                   </td>
                   <td className="px-6 py-4">
                     {user.is_banned ? (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                        <XCircle className="h-3 w-3" />
+                        <AlertTriangle className="h-3 w-3" />
                         Banned
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-                        <CheckCircle className="h-3 w-3" />
                         Active
                       </span>
                     )}
@@ -193,16 +243,16 @@ export default function AdminUsersPage() {
                         <>
                           {user.is_banned ? (
                             <button
-                              onClick={() => handleUnlockUser(user)}
-                              className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
+                              onClick={() => handleUnbanUser(user)}
+                              className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium text-emerald-600 hover:bg-emerald-50"
                             >
                               <Unlock className="h-4 w-4" />
-                              Unlock
+                              Unban
                             </button>
                           ) : (
                             <button
                               onClick={() => { setSelectedUser(user); setShowBanModal(true); }}
-                              className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                              className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50"
                             >
                               <Ban className="h-4 w-4" />
                               Ban
@@ -219,10 +269,84 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
+      {/* Add User Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-slate-900">Add New User</h3>
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddUser} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="user@example.com"
+                    className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="John Doe"
+                    className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Role</label>
+                <select
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value as 'user' | 'admin')}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addingUser}
+                  className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50"
+                >
+                  {addingUser ? 'Adding...' : 'Send Invite'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Ban Modal */}
       {showBanModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 bg-red-100 rounded-full">
                 <AlertTriangle className="h-6 w-6 text-red-600" />

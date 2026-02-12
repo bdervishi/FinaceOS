@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/admin'
 
 export default async function AdminOverviewPage() {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
 
   // Fetch stats without count() to avoid TypeScript issues
   const [totalUsers, activeUsers, bannedUsers, totalAgents, adminCount, recentActions] = await Promise.all([

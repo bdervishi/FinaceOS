@@ -1,7 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/admin'
 
 export default async function AdminLogsPage() {
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
 
   const { data: adminActions } = await supabase
     .from('admin_actions')

@@ -154,10 +154,10 @@ export default function DashboardPage() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} />
-              <YAxis stroke="#94a3b8" fontSize={12} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+              <YAxis stroke="#94a3b8" fontSize={12} tickFormatter={(value: number | undefined) => `$${((value ?? 0) / 1000).toFixed(0)}k`} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
-                formatter={(value: number) => [`$${value.toLocaleString()}`, 'Value']}
+                formatter={(value: number | undefined) => [`$${(value ?? 0).toLocaleString()}`, 'Value']}
               />
               <Area
                 type="monotone"

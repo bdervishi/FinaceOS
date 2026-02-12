@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Shield, Search, Ban, Unban, MoreVertical, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
+import { Shield, Search, Ban, Unlock, MoreVertical, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
 
 interface User {
   id: string
@@ -60,7 +60,7 @@ export default function AdminUsersPage() {
     }
   }
 
-  const handleUnbanUser = async (user: User) => {
+  const handleUnlockUser = async (user: User) => {
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -193,11 +193,11 @@ export default function AdminUsersPage() {
                         <>
                           {user.is_banned ? (
                             <button
-                              onClick={() => handleUnbanUser(user)}
+                              onClick={() => handleUnlockUser(user)}
                               className="flex items-center gap-1 px-3 py-1 rounded-lg text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
                             >
-                              <Unban className="h-4 w-4" />
-                              Unban
+                              <Unlock className="h-4 w-4" />
+                              Unlock
                             </button>
                           ) : (
                             <button

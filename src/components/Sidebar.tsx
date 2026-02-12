@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, PieChart, CreditCard, TrendingUp, Settings, LogOut, Wallet, User } from 'lucide-react'
+import { Home, PieChart, CreditCard, TrendingUp, Settings, LogOut, Wallet, User, Shield } from 'lucide-react'
 import { clsx } from 'clsx'
 import { createClient } from '@/lib/supabase'
 
@@ -29,20 +29,35 @@ interface SidebarProps {
   user?: User
 }
 
+interface Profile {
+  id: string
+  role: 'user' | 'admin' | 'super_admin'
+  is_banned: boolean
+}
+
 export default function Sidebar({ user: initialUser }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
   const [user, setUser] = useState<User | null>(initialUser || null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(!initialUser)
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user as User | null)
+    const getUserData = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (authUser) {
+        setUser(authUser as User)
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role, is_banned')
+          .eq('id', authUser.id)
+          .single()
+        if (profileData) setProfile(profileData)
+      }
       setLoading(false)
     }
-    getUser()
+    getUserData()
   }, [])
 
   const handleSignOut = async () => {
@@ -61,6 +76,8 @@ export default function Sidebar({ user: initialUser }: SidebarProps) {
     if (user?.email) return user.email
     return 'demo@financeos.app'
   }
+
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin'
 
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-white w-64">
@@ -94,6 +111,28 @@ export default function Sidebar({ user: initialUser }: SidebarProps) {
             )
           })}
         </div>
+
+        {/* Admin Section */}
+        {isAdmin && (
+          <>
+            <div className="my-4 border-t border-slate-800"></div>
+            <p className="px-3 text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Admin</p>
+            <div className="space-y-1">
+              <Link
+                href="/dashboard/admin"
+                className={clsx(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  pathname.startsWith('/dashboard/admin')
+                    ? 'bg-red-500/10 text-red-400'
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                )}
+              >
+                <Shield className="h-5 w-5" />
+                Admin Panel
+              </Link>
+            </div>
+          </>
+        )}
       </nav>
 
       {/* User Profile */}

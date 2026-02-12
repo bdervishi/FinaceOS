@@ -50,7 +50,7 @@ export default function Sidebar({ user: initialUser }: SidebarProps) {
         setUser(authUser as User)
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('role, is_banned')
+          .select('*')
           .eq('id', authUser.id)
           .single()
         if (profileData) setProfile(profileData)

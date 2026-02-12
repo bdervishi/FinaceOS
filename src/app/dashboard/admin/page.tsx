@@ -3,13 +3,13 @@ import { createServerSupabaseClient } from '@/lib/admin'
 export default async function AdminOverviewPage() {
   const supabase = createServerSupabaseClient()
 
-  // Fetch stats
+  // Fetch stats without count() to avoid TypeScript issues
   const [totalUsers, activeUsers, bannedUsers, totalAgents, adminCount, recentActions] = await Promise.all([
-    supabase.from('profiles').select('id', { count: 'exact' }),
-    supabase.from('profiles').select('id').eq('is_banned', false).count('exact'),
-    supabase.from('profiles').select('id').eq('is_banned', true).count('exact'),
-    supabase.from('agents').select('id', { count: 'exact' }),
-    supabase.from('profiles').select('id').in('role', ['admin', 'super_admin']).count('exact'),
+    supabase.from('profiles').select('id'),
+    supabase.from('profiles').select('id').eq('is_banned', false),
+    supabase.from('profiles').select('id').eq('is_banned', true),
+    supabase.from('agents').select('id'),
+    supabase.from('profiles').select('id').in('role', ['admin', 'super_admin']),
     supabase.from('admin_actions').select('*').order('created_at', { ascending: false }).limit(5),
   ])
 
@@ -24,19 +24,19 @@ export default async function AdminOverviewPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <p className="text-sm font-medium text-slate-500">Total Users</p>
-          <p className="text-3xl font-bold text-slate-900 mt-1">{totalUsers.count || 0}</p>
+          <p className="text-3xl font-bold text-slate-900 mt-1">{totalUsers.data?.length || 0}</p>
         </div>
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <p className="text-sm font-medium text-slate-500">Active Users</p>
-          <p className="text-3xl font-bold text-emerald-600 mt-1">{activeUsers.count || 0}</p>
+          <p className="text-3xl font-bold text-emerald-600 mt-1">{activeUsers.data?.length || 0}</p>
         </div>
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <p className="text-sm font-medium text-slate-500">Banned Users</p>
-          <p className="text-3xl font-bold text-red-600 mt-1">{bannedUsers.count || 0}</p>
+          <p className="text-3xl font-bold text-red-600 mt-1">{bannedUsers.data?.length || 0}</p>
         </div>
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <p className="text-sm font-medium text-slate-500">Active Agents</p>
-          <p className="text-3xl font-bold text-blue-600 mt-1">{totalAgents.count || 0}</p>
+          <p className="text-3xl font-bold text-blue-600 mt-1">{totalAgents.data?.length || 0}</p>
         </div>
       </div>
 
